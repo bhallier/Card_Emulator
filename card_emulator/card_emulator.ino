@@ -1,20 +1,26 @@
 //Magnetic Card emulator (track 2 only)
 //Connect an H-Bridge to the left and right pins defined below
 //Connect the H-Bridge outputs to a coil wrapped around a ferrous strip thin enough to insert into a card reader.
-int leftPin = 6;
-int rightPin = 7;
-int clockSpeed = 500;
+int leftPin = 2;
+int rightPin = 3;
+int ledPin = 13;
+int clockSpeed = 1000;
 int clockHalf = 0;
+int replayDelay = 2000;
 char track2[255];
 
+
 //Track 2 data
-char tmp[40] = ";0000000000000000=00000000000000000000?";
+//Up to 40 characters (numeric) including SS, ES and LRC.
+String data = ";2813308004?";
 
 void setup() {
   pinMode(leftPin, OUTPUT);
-  pinMode(rightPin, OUTPUT); 
-  for (int i = 0; i < 40; i++) {
-    track2[i] = tmp[i];
+  pinMode(rightPin, OUTPUT);
+  pinMode(ledPin, OUTPUT); 
+ 
+  for (int i = 0; i < data.length(); i++) {
+    track2[i] = data[i];
   }
 }
 
@@ -64,7 +70,7 @@ void writeChar(char c) {
   }
 }
 
-int LRC(char* data, int length) {
+int LRC(String data, int length) {
   int lrc = 0;
   for (int i = 0; i < length; i++) {
     lrc ^= (data[i]-0x30);
@@ -73,16 +79,22 @@ int LRC(char* data, int length) {
 }
 
 void loop(){
+  //Turn on active led
+  digitalWrite(ledPin, HIGH);
   for(int i = 0; i < 20; i ++) {
     writeBit(0);
   }
-  for (int i = 0; i < 39; i++) { 
-    writeChar(track2[i]);
+  for (int i = 0; i < data.length(); i++) { 
+    writeChar(data[i]);
   }
-  writeChar(LRC(track2, strlen(track2)));
+  writeChar(LRC(data, data.length()));
   for(int i = 0; i < 20; i ++) {
     writeBit(0);
   }
   writeLow();
-  delay(clockSpeed);
+  
+  //Turn off active led
+  digitalWrite(ledPin, LOW);
+  
+  delay(replayDelay);
 }
